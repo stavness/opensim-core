@@ -8,7 +8,7 @@ include_directories(${OpenSim_SOURCE_DIR}
                     ${OpenSim_SOURCE_DIR}/Vendors)
 
 add_subdirectory(ExampleHopperDevice)
-
+add_subdirectory(HopperStretchController)
 
 set(SANDBOX_FILES
     "futureOrientationInverseKinematics.osim"
