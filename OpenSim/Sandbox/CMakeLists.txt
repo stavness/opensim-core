@@ -8,10 +8,7 @@ include_directories(${OpenSim_SOURCE_DIR}
                     ${OpenSim_SOURCE_DIR}/Vendors)
 
 add_subdirectory(ExampleHopperDevice)
-add_subdirectory(HopperStretchController)
-add_subdirectory(TestbedStretchController)
-add_subdirectory(TugofwarStretchController)
-add_subdirectory(ArmStretchController)
+
 
 set(SANDBOX_FILES
     "futureOrientationInverseKinematics.osim"
@@ -38,5 +35,5 @@ if(UNIX)
     add_executable(ImuStreaming ImuStreaming.cpp)
     target_link_libraries(ImuStreaming osimCommon osimSimulation osimTools)
 endif()
-
+add_subdirectory(ExampleStretchController)
 add_subdirectory(xsens)

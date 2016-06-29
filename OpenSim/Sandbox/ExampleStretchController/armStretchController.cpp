@@ -125,7 +125,7 @@ int main()
 	//==========================================================================
 
 		
-	auto model = Model("C:/workspace/opensim/arm26.osim");
+	auto model = Model("arm26.osim");
 	model.setUseVisualizer(true);
 	model.setGravity(SimTK::Vec3(0));
 		
