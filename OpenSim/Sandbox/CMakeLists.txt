@@ -11,6 +11,7 @@ add_subdirectory(ExampleHopperDevice)
 add_subdirectory(HopperStretchController)
 add_subdirectory(TestbedStretchController)
 add_subdirectory(TugofwarStretchController)
+add_subdirectory(ArmStretchController)
 
 set(SANDBOX_FILES
     "futureOrientationInverseKinematics.osim"

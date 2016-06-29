@@ -1,5 +1,4 @@
 add_executable(tugofwarStretchController
-    buildTugofwarModel.cpp
     exampleStretchController.cpp
     helperMethods.h
     StretchController.h)
