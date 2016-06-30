@@ -152,14 +152,14 @@ Model buildTugofwarModel()
 		OpenSim::PhysicalFrame* rightAnchorFrame = new PhysicalOffsetFrame(ground, Transform(Vec3(0, 0.05, -0.35)));
 		rightAnchorFrame->setName("RightAnchor");
 		osimModel.addFrame(rightAnchorFrame);
-		// Cylinder
-		OpenSim::PhysicalFrame* cylFrame = new PhysicalOffsetFrame(ground, Transform(Vec3(-.2, 0.0, 0.)));
-		cylFrame->setName("CylAnchor");
-		osimModel.addFrame(cylFrame);
-		// Ellipsoid
-		OpenSim::PhysicalFrame* ellipsoidFrame = new PhysicalOffsetFrame(ground, Transform(Vec3(-.6, 0.6, 0.)));
-		ellipsoidFrame->setName("EllipsoidAnchor");
-		osimModel.addFrame(ellipsoidFrame);
+		//// Cylinder
+		//OpenSim::PhysicalFrame* cylFrame = new PhysicalOffsetFrame(ground, Transform(Vec3(-.2, 0.0, 0.)));
+		//cylFrame->setName("CylAnchor");
+		//osimModel.addFrame(cylFrame);
+		//// Ellipsoid
+		//OpenSim::PhysicalFrame* ellipsoidFrame = new PhysicalOffsetFrame(ground, Transform(Vec3(-.6, 0.6, 0.)));
+		//ellipsoidFrame->setName("EllipsoidAnchor");
+		//osimModel.addFrame(ellipsoidFrame);
 
 
 		// Add display geometry to the ground to visualize in the Visualizer and GUI
@@ -182,13 +182,13 @@ Model buildTugofwarModel()
 		leftAnchorFrame->attachGeometry(leftAnchorGeometry);
 		rightAnchorFrame->attachGeometry(rightAnchorGeometry);
 
-		Geometry* cylGeometry = new Cylinder(0.2, .3);
-		cylGeometry->upd_Appearance().set_representation(VisualRepresentation::DrawWireframe);
-		cylFrame->attachGeometry(cylGeometry);
+		//Geometry* cylGeometry = new Cylinder(0.2, .3);
+		//cylGeometry->upd_Appearance().set_representation(VisualRepresentation::DrawWireframe);
+		//cylFrame->attachGeometry(cylGeometry);
 
-		Geometry* ellipsoidGeometry = new Ellipsoid(0.2, .7, .5);
-		ellipsoidGeometry->setColor(SimTK::Vec3(1.0, .5, 0.1));
-		ellipsoidFrame->attachGeometry(ellipsoidGeometry);
+		//Geometry* ellipsoidGeometry = new Ellipsoid(0.2, .7, .5);
+		//ellipsoidGeometry->setColor(SimTK::Vec3(1.0, .5, 0.1));
+		//ellipsoidFrame->attachGeometry(ellipsoidGeometry);
 
 		// BLOCK BODY
 		Vec3 blockMassCenter(0);
@@ -225,7 +225,8 @@ Model buildTugofwarModel()
 
 		// GRAVITY
 
-		osimModel.setGravity(Vec3(0, -9.80665, 0));
+		//osimModel.setGravity(Vec3(0, -9.80665, 0));
+		osimModel.setGravity(Vec3(0, 0, 0));
 
 		// Obtain the default acceleration due to gravity
 		//Vec3 gravity = osimModel.getGravity();
@@ -389,6 +390,7 @@ int main()
 	cout << "starting" << endl;
 	auto tugofwar = buildTugofwarModel();
 	cout << "model created" << endl;
+	tugofwar.setUseVisualizer(true);
 
 	//// Update the hopper model's internal data members, which includes
 	//// identifying its subcomponents from its properties.
