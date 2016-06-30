@@ -37,11 +37,9 @@ set_target_properties(armStretchController PROPERTIES
     EXCLUDE_FROM_ALL TRUE
     )
 
-add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/arm26.osim"
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/arm26.osim"
-    COMMAND ${CMAKE_COMMAND} -E copy
-    "${CMAKE_CURRENT_SOURCE_DIR}/arm26.osim"
-    "Examples/ExampleStretchController")
+set(MODEL_FILES "arm26.osim")
+
+configure_file(${MODEL_FILES} ${CMAKE_CURRENT_BINARY_DIR}/${MODEL_FILES} COPYONLY)
+
 	
 	
