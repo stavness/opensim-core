@@ -1,3 +1,16 @@
+add_executable(modelBasedController
+    modelbasedStretchController.cpp
+    HelperMethods.h
+    ModelBasedController.h)
+
+target_link_libraries(modelBasedController osimTools)
+
+set_target_properties(modelBasedController PROPERTIES
+    PROJECT_LABEL "ModelBased Controller"
+    FOLDER "Examples/ExampleStretchController"
+    EXCLUDE_FROM_ALL TRUE
+    )
+
 add_executable(testbedStretchController
     testbedStretchController.cpp
     HelperMethods.h
