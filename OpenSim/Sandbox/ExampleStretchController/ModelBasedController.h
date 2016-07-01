@@ -66,6 +66,14 @@ public:
 		constructProperties();
 	}
 
+	void updateTargetState(const SimTK::State& s) const {
+		double setpoint = getInputValue<double>(s, "fiberLength_setpoint");
+
+		//SimTK::State targetState = s;
+		_internalModel->updCoordinateSet()[5].setValue(*_targetState, setpoint, false);
+		_internalModel->realizePosition(*_targetState);
+	}
+
 	// Member function for computing the proportional control signal k*a.
 	double computeControl(const SimTK::State& s) const
 	{
@@ -73,11 +81,15 @@ public:
 		//m.initSystem();
 		//Model* _internalModel = &m;
 
-		double setpoint = getInputValue<double>(s, "fiberLength_setpoint");
+		//double setpoint = getInputValue<double>(s, "fiberLength_setpoint");
 
-		//SimTK::State targetState = s;
-		_internalModel->updCoordinateSet()[5].setValue(*_targetState, setpoint, false);
-		_internalModel->realizePosition(*_targetState);
+		////SimTK::State targetState = s;
+		//_internalModel->updCoordinateSet()[5].setValue(*_targetState, setpoint, false);
+		//_internalModel->realizePosition(*_targetState);
+
+		updateTargetState(s);
+
+
 		Actuator& act = _internalModel->updActuators()[0];
 
 		//cout << _internalModel->getBodySet()[0].getName();
@@ -148,6 +160,26 @@ private:
 
 		//_internalModel->initStateWithoutRecreatingSystem(s);
 
+	}
+
+	// Implement generateDecorations by WrapSphere to replace the previous out of place implementation 
+	// in ModelVisualizer
+	void generateDecorations(bool fixed, const ModelDisplayHints& hints, const SimTK::State& state,
+		SimTK::Array_<SimTK::DecorativeGeometry>& appendToThis) const
+	{
+		Super::generateDecorations(fixed, hints, state, appendToThis);
+		if (fixed) return;
+
+		updateTargetState(state);
+
+		const SimTK::Vec3 color(SimTK::Cyan);
+		const SimTK::Transform& X_GW = getModel().getBodySet()[0].getTransformInGround(*_targetState);
+		//Geometry& geom = *(getModel().getBodySet()[0].get_attached_geometry(0).clone());
+		// TODO get correct geometry from the model
+		appendToThis.push_back(
+				SimTK::DecorativeSphere(0.1)
+				.setTransform(X_GW).setResolution(2.0)
+				.setColor(color).setOpacity(0.5));
 	}
 
 	Model* _internalModel;
