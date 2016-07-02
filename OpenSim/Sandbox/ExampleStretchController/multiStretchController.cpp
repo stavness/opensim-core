@@ -1,31 +1,32 @@
 /* -------------------------------------------------------------------------- *
- *              OpenSim:  modelbasedStretchController.cpp                     *
- * -------------------------------------------------------------------------- *
- * The OpenSim API is a toolkit for musculoskeletal modeling and simulation.  *
- * See http://opensim.stanford.edu and the NOTICE file for more information.  *
- * OpenSim is developed at Stanford University and supported by the US        *
- * National Institutes of Health (U54 GM072970, R24 HD065690) and by DARPA    *
- * through the Warrior Web program.                                           *
- *                                                                            *
- * Copyright (c) 2005-2016 Stanford University and the Authors                *
- * Author(s): Chris Dembia, Shrinidhi K. Lakshmikanth, Ajay Seth,             *
- *            Thomas Uchida                                                   *
- *                                                                            *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may    *
- * not use this file except in compliance with the License. You may obtain a  *
- * copy of the License at http://www.apache.org/licenses/LICENSE-2.0.         *
- *                                                                            *
- * Unless required by applicable law or agreed to in writing, software        *
- * distributed under the License is distributed on an "AS IS" BASIS,          *
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   *
- * See the License for the specific language governing permissions and        *
- * limitations under the License.                                             *
- * -------------------------------------------------------------------------- */
+*              OpenSim:  multiStretchController.cpp                     *
+* -------------------------------------------------------------------------- *
+* The OpenSim API is a toolkit for musculoskeletal modeling and simulation.  *
+* See http://opensim.stanford.edu and the NOTICE file for more information.  *
+* OpenSim is developed at Stanford University and supported by the US        *
+* National Institutes of Health (U54 GM072970, R24 HD065690) and by DARPA    *
+* through the Warrior Web program.                                           *
+*                                                                            *
+* Copyright (c) 2005-2016 Stanford University and the Authors                *
+* Author(s): Chris Dembia, Shrinidhi K. Lakshmikanth, Ajay Seth,             *
+*            Thomas Uchida                                                   *
+*                                                                            *
+* Licensed under the Apache License, Version 2.0 (the "License"); you may    *
+* not use this file except in compliance with the License. You may obtain a  *
+* copy of the License at http://www.apache.org/licenses/LICENSE-2.0.         *
+*                                                                            *
+* Unless required by applicable law or agreed to in writing, software        *
+* distributed under the License is distributed on an "AS IS" BASIS,          *
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   *
+* See the License for the specific language governing permissions and        *
+* limitations under the License.                                             *
+* -------------------------------------------------------------------------- */
 
 
 #include <OpenSim/OpenSim.h>
 #include "helperMethods.h"
-#include "ModelBasedController.h"
+#include "MultiController.h"
+#include "StretchController.h"
 
 static const double SIGNAL_GEN_CONSTANT{ 0.0 };
 static const double REPORTING_INTERVAL{ 0.2 };
@@ -34,8 +35,8 @@ static const double DAMPING{ 10 };
 static const double STIFFNESS{ 1. };
 static const double SPHERE_RADIUS{ 0.1 };
 
-static const std::string testbedAttachment1{"ground"};
-static const std::string testbedAttachment2{"load"};
+static const std::string testbedAttachment1{ "ground" };
+static const std::string testbedAttachment2{ "load" };
 using namespace std;
 
 namespace OpenSim {
@@ -47,14 +48,33 @@ Model buildTugofwarModel();   //defined in buildTugofwarModel.cpp
 // Build the StretchController.
 //------------------------------------------------------------------------------
 
-StretchController* buildStretchController(PathActuator& pa) {
+void addStretchController(MultiController* controller, PathActuator& pa) {
+
+	try {
+	const int repIdx = controller->append_controller_reps(
+		StretchController()); // creates copy
+	auto& subcon = controller->upd_controller_reps(repIdx);
+	subcon.setName(pa.getName() + "_stretch_controller");
+	subcon.set_length_gain(LENGTH_GAIN);
+	subcon.updConnector<PathActuator>("actuator").connect(pa);
+	subcon.dumpConnections();
+	cout << "got connectee" << subcon.getConnectee<PathActuator>
+		("actuator").getName() << endl;
+	}
+	catch (Exception e) {
+		cout << e.what() << endl;
+	}
+}
+
+MultiController* buildMultiController() {
 	try {
 		cout << "building controller" << endl;
-		auto controller = new StretchController();
-		controller->setName("stretchCon");
-		controller->set_length_gain(LENGTH_GAIN);
-		controller->updInput("fiberLength").connect(pa.getOutput("geometrypath_/length")); 
-		controller->updConnector("actuator").connect(pa);
+		auto controller = new MultiController();
+		controller->setName("multiCon");
+		//controller->set_length_gain(LENGTH_GAIN);
+		//controller->updInput("fiberLength").connect(pa.getOutput("geometrypath_/length"));
+		//controller->updConnector("actuator").connect(pa);
+
 		return controller;
 	}
 	catch (Exception e) {
@@ -64,50 +84,43 @@ StretchController* buildStretchController(PathActuator& pa) {
 
 
 //------------------------------------------------------------------------------
-// Attach the stretch controller to a model
-//------------------------------------------------------------------------------
-void connectControllerToModel(Controller& controller, Model& model)
-{
-}
-
-//------------------------------------------------------------------------------
 // Add a SignalGenerator to a StretchController.
 //------------------------------------------------------------------------------
-void addSignalGeneratorToController(Controller& controller)
+void addSignalGeneratorToController(MultiController& controller)
 {
-    auto lengthSignalGen = new SignalGenerator();
+	auto lengthSignalGen = new SignalGenerator();
 	lengthSignalGen->setName("lengthSetPointGen");
 
-    // Try changing the constant value and/or the function (e.g., try a
-    // LinearFunction).
+	// Try changing the constant value and/or the function (e.g., try a
+	// LinearFunction).
 	//lengthSignalGen->set_function(Constant(SIGNAL_GEN_CONSTANT));
-	lengthSignalGen->set_function(StepFunction(0,2.,0.,-0.1));
+	lengthSignalGen->set_function(StepFunction(0, 1., 0., 0.1));
 	controller.addComponent(lengthSignalGen);
-	
+
 	// Connect the signal generator's output signal to the controller's
-    // setpoint 
-	controller.updInput("fiberLength_setpoint")
-        .connect(lengthSignalGen->getOutput("signal"));
-} 
+	// setpoint 
+	controller.updInput("setpoint")
+		.connect(lengthSignalGen->getOutput("signal"));
+}
 
 
 //------------------------------------------------------------------------------
 // Add a ConsoleReporter to a model for displaying outputs from a device.
 //------------------------------------------------------------------------------
 void addDeviceConsoleReporterToModel(Model& model, Controller& controller,
-    const std::vector<std::string>& deviceOutputs)
+	const std::vector<std::string>& deviceOutputs)
 {
-    // Create a new ConsoleReporter. Set its name and reporting interval.
-    auto reporter = new ConsoleReporter();
-    reporter->setName(model.getName() + "_" + controller.getName() + "_results");
-    reporter->set_report_time_interval(REPORTING_INTERVAL);
+	// Create a new ConsoleReporter. Set its name and reporting interval.
+	auto reporter = new ConsoleReporter();
+	reporter->setName(model.getName() + "_" + controller.getName() + "_results");
+	reporter->set_report_time_interval(REPORTING_INTERVAL);
 
-    // Loop through the desired device outputs and add them to the reporter.
-    for (auto thisOutputName : deviceOutputs)
-        reporter->updInput("inputs").connect(controller.getOutput(thisOutputName));
+	// Loop through the desired device outputs and add them to the reporter.
+	for (auto thisOutputName : deviceOutputs)
+		reporter->updInput("inputs").connect(controller.getOutput(thisOutputName));
 
-    // Add the reporter to the model.
-    model.addComponent(reporter);
+	// Add the reporter to the model.
+	model.addComponent(reporter);
 }
 
 
@@ -385,103 +398,115 @@ Model buildTugofwarModel()
 } // namespace OpenSim
 
 
-//------------------------------------------------------------------------------
-// START HERE! Toggle "if (false)" to "if (true)" to enable/disable each step in
-// the exercise. The project should execute without making any changes (you
-// should see the unassisted hopper hop slightly).
-//------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------
+  // START HERE! Toggle "if (false)" to "if (true)" to enable/disable each step in
+  // the exercise. The project should execute without making any changes (you
+  // should see the unassisted hopper hop slightly).
+  //------------------------------------------------------------------------------
 int main()
 {
 	try {
-    using namespace OpenSim;
-	using namespace std;
-    //==========================================================================
-    // Step 1. Build an stretch controller and test it on a simple testbed.
-    //==========================================================================
+		using namespace OpenSim;
+		using namespace std;
+		//==========================================================================
+		// Step 1. Build an stretch controller and test it on a simple testbed.
+		//==========================================================================
 
-	// Build the testbed and controller.
-	cout << "starting" << endl;
-	auto tugofwar = buildTugofwarModel();
-	cout << "model created" << endl;
-	tugofwar.setUseVisualizer(true);
+		// Build the testbed and controller.
+		cout << "starting" << endl;
+		auto tugofwar = buildTugofwarModel();
+		cout << "model created" << endl;
+		tugofwar.setUseVisualizer(true);
 
-	//// Update the hopper model's internal data members, which includes
-	//// identifying its subcomponents from its properties.
-	//tugofwar.finalizeFromProperties();
+		//// Update the hopper model's internal data members, which includes
+		//// identifying its subcomponents from its properties.
+		//tugofwar.finalizeFromProperties();
 
-	//// Show all Components in the model.
-	//showSubcomponentInfo(tugofwar);
-	//// Show only the Joints in the model.
-	//showSubcomponentInfo<Joint>(tugofwar);
-
-		
-	auto& pathActuator = tugofwar.updComponent<PathActuator>("muscle1");
-	auto controller = buildStretchController(pathActuator);
-	tugofwar.addController(controller);
-
-	// Use a SignalGenerator to create a set point signal for testing the
-	// controller. 
-	addSignalGeneratorToController(*controller);
-	cout << "generator added" << endl;
-
-	// Show all Components in the testbed.
-	showSubcomponentInfo(tugofwar);
-	showSubcomponentInfo(*controller);
+		//// Show all Components in the model.
+		//showSubcomponentInfo(tugofwar);
+		//// Show only the Joints in the model.
+		//showSubcomponentInfo<Joint>(tugofwar);
 
 
-	cout << "sub info are shown" << endl;
+		//auto& pathActuator = tugofwar.updComponent<PathActuator>("muscle1");
+		//auto controller = buildStretchController(pathActuator);
+		auto controller = buildMultiController();
 
-	// List the device outputs we wish to display during the simulation.
-	std::vector<std::string> controllerOutputs{ "stretch_control"};
+		PathActuator& pa1 = tugofwar.updComponent<PathActuator>("muscle1");
+		PathActuator& pa2 = tugofwar.updComponent<PathActuator>("muscle2");
 
-	// Create a new ConsoleReporter. Set its name and reporting interval.
-	auto reporter = new ConsoleReporter();
-	reporter->setName(tugofwar.getName() + "_" + controller->getName() + "_results");
-	reporter->set_report_time_interval(REPORTING_INTERVAL);
-	reporter->updInput("inputs").connect(controller->getOutput("stretch_control"));
-	reporter->updInput("inputs").connect(pathActuator.getOutput("geometrypath_/length"));
-	//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_0/value"));
-	//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_1/value"));
-	//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_2/value"));
-	//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_3/value"));
-	//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_4/value"));
-	reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_5/value"));
+		addStretchController(controller, pa1);
+		addStretchController(controller, pa2);
 
-	// Add the reporter to the model.
-	tugofwar.addComponent(reporter);
+		tugofwar.addController(controller);
+		cout << "controller added" << endl;
 
-	// Add a table reporter 
-	//TableReporter* tblReporter = new TableReporter();
-	//tblReporter->set_report_time_interval(0.1);
-	//tblReporter->updInput("inputs").connect(controller->getOutput("stretch_control"));
-	//tblReporter->updInput("inputs").connect(pathActuator.getOutput("geometrypath_/length"));
-	//tugofwar.addComponent(tblReporter);
-	
-	// Add geometry to visualize the target 
-	//Geometry* targetGeom = new Sphere(SPHERE_RADIUS);
-	//targetGeom->setOpacity(0.6);
-	//tugofwar.updGround().attachGeometry(targetGeom);
+		// Use a SignalGenerator to create a set point signal for testing the
+		// controller. 
+		addSignalGeneratorToController(*controller);
+		cout << "generator added" << endl;
 
-	SimTK::State& sDev = tugofwar.initSystem();
+		// Show all Components in the testbed.
+		showSubcomponentInfo(tugofwar);
+		showSubcomponentInfo(*controller);
 
-	Model* internalModel = tugofwar.clone();
-	internalModel->setUseVisualizer(false);
-	SimTK::State& s = internalModel->initSystem();
 
-	controller->setInternalModel(internalModel);
-	controller->setTargetState(&s);
-	//controller->setTargetGeometry(targetGeom);
-	cout << "before sim" << endl;
-	simulate(tugofwar, sDev);
+		cout << "sub info are shown" << endl;
 
-	//auto table = tblReporter->getReport();
-	//CSVFileAdapter::write(table, "testbed_stretch.csv");
+		// List the device outputs we wish to display during the simulation.
+		std::vector<std::string> controllerOutputs{ "stretch_control" };
 
-}
-catch (const std::exception& e) {
-	std::cout << e.what() << std::endl;
-}
-//system("pause");
-return 0;
+		// Create a new ConsoleReporter. Set its name and reporting interval.
+		auto reporter = new ConsoleReporter();
+		reporter->setName(tugofwar.getName() + "_" + controller->getName() + "_results");
+		reporter->set_report_time_interval(REPORTING_INTERVAL);
+		//reporter->updInput("inputs").connect(controller->getOutput("stretch_control"));
+		reporter->updInput("inputs").connect(pa1.getOutput("geometrypath_/length"));
+		reporter->updInput("inputs").connect(pa2.getOutput("geometrypath_/length"));
+
+		//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_0/value"));
+		//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_1/value"));
+		//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_2/value"));
+		//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_3/value"));
+		//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_4/value"));
+		reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_5/value"));
+
+		// Add the reporter to the model.
+		tugofwar.addComponent(reporter);
+
+		// Add a table reporter 
+		//TableReporter* tblReporter = new TableReporter();
+		//tblReporter->set_report_time_interval(0.1);
+		//tblReporter->updInput("inputs").connect(controller->getOutput("stretch_control"));
+		//tblReporter->updInput("inputs").connect(pathActuator.getOutput("geometrypath_/length"));
+		//tugofwar.addComponent(tblReporter);
+
+		// Add geometry to visualize the target 
+		//Geometry* targetGeom = new Sphere(SPHERE_RADIUS);
+		//targetGeom->setOpacity(0.6);
+		//tugofwar.updGround().attachGeometry(targetGeom);
+
+		SimTK::State& sDev = tugofwar.initSystem();
+
+		//Model* internalModel = tugofwar.clone();
+		//internalModel->setUseVisualizer(false);
+		//SimTK::State& s = internalModel->initSystem();
+
+		//controller->setInternalModel(internalModel);
+		//controller->setTargetState(&s);
+
+		//controller->setTargetGeometry(targetGeom);
+		cout << "before sim" << endl;
+		simulate(tugofwar, sDev);
+
+		//auto table = tblReporter->getReport();
+		//CSVFileAdapter::write(table, "testbed_stretch.csv");
+
+	}
+	catch (const std::exception& e) {
+		std::cout << e.what() << std::endl;
+	}
+	system("pause");
+	return 0;
 
 };

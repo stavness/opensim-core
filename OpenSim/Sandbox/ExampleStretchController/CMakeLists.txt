@@ -1,3 +1,17 @@
+add_executable(multiController
+    multiStretchController.cpp
+    HelperMethods.h
+    StretchController.h
+    MultiController.h)
+
+target_link_libraries(multiController osimTools)
+
+set_target_properties(multiController PROPERTIES
+    PROJECT_LABEL "Multi Controller"
+    FOLDER "Examples/ExampleStretchController"
+    EXCLUDE_FROM_ALL TRUE
+    )
+	
 add_executable(modelBasedController
     modelbasedStretchController.cpp
     HelperMethods.h
