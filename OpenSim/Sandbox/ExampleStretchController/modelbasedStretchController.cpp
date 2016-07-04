@@ -38,9 +38,6 @@ using namespace std;
 
 namespace OpenSim {
 
-// Forward declarations for methods defined in HelperMethods.h
-StretchController* buildStretchController(const PathActuator&);
-
 //------------------------------------------------------------------------------
 // Add a SignalGenerator to a StretchController.
 //------------------------------------------------------------------------------
