@@ -35,10 +35,10 @@ static const double LENGTH_SET_POINT{ 0.33 };
 static const double LENGTH_GAIN = 1.0;
 
 //------------------------------------------------------------------------------
-// MultiController
+// SubStretchController
 //------------------------------------------------------------------------------
-class MultiController : public Controller {
-	OpenSim_DECLARE_CONCRETE_OBJECT(MultiController, Controller);
+class MultiController : public StretchController {
+	OpenSim_DECLARE_CONCRETE_OBJECT(MultiController, StretchController);
 public:
 	// List of stretch controllers
 	OpenSim_DECLARE_LIST_PROPERTY(controller_reps, StretchController, "list of stretch controllers");

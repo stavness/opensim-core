@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- *
- *                     OpenSim:  exampleHopperDevice.cpp                      *
+ *               OpenSim:  tugofwarStretchController.cpp                      *
  * -------------------------------------------------------------------------- *
  * The OpenSim API is a toolkit for musculoskeletal modeling and simulation.  *
  * See http://opensim.stanford.edu and the NOTICE file for more information.  *
@@ -8,8 +8,8 @@
  * through the Warrior Web program.                                           *
  *                                                                            *
  * Copyright (c) 2005-2016 Stanford University and the Authors                *
- * Author(s): Chris Dembia, Shrinidhi K. Lakshmikanth, Ajay Seth,             *
- *            Thomas Uchida                                                   *
+ * Author(s): Ian Stavness, Mohammad Shabani, Chris Dembia,                   *
+ *			  Shrinidhi K. Lakshmikanth, Ajay Seth, Thomas Uchida             *
  *                                                                            *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may    *
  * not use this file except in compliance with the License. You may obtain a  *
@@ -29,7 +29,6 @@
 
 static const double SIGNAL_GEN_CONSTANT{ 0.33 };
 static const double REPORTING_INTERVAL{ 0.2 };
-static const double LENGTH_GAIN = 1.0;
 static const std::string testbedAttachment1{"ground"};
 static const std::string testbedAttachment2{"load"};
 using namespace std;
@@ -38,36 +37,6 @@ namespace OpenSim {
 
 // Forward declarations for methods used below.
 Model buildTugofwarModel();   //defined in buildTugofwarModel.cpp
-
-//------------------------------------------------------------------------------
-// Build the StretchController.
-//------------------------------------------------------------------------------
-
-Controller* buildStretchController(PathActuator& pa) {
-	try {
-		cout << "building controller" << endl;
-		auto controller = new StretchController();
-		controller->setName("stretchCon");
-		controller->set_length_gain(LENGTH_GAIN);
-
-		Muscle* mus = dynamic_cast <Muscle*> (&pa);
-		controller->updInput("fiberLength").connect(mus->getOutput("fiber_length"));   // TODO connect this to what?
-		controller->updConnector("actuator").connect(pa); // TODO need pointer to muscle!
-		return controller;
-	}
-	catch (Exception e) {
-		cout << e.what() << endl;
-	}
-}
-
-
-//------------------------------------------------------------------------------
-// Attach the stretch controller to a model
-//------------------------------------------------------------------------------
-void connectControllerToModel(Controller& controller, Model& model)
-{
-	model.addController(&controller);
-}
 
 //------------------------------------------------------------------------------
 // Add a SignalGenerator to a StretchController.
@@ -84,7 +53,7 @@ void addSignalGeneratorToController(Controller& controller)
 	
 	// Connect the signal generator's output signal to the controller's
     // setpoint 
-	controller.updInput("fiberLength_setpoint")
+	controller.updInput("length_setpoint")
         .connect(lengthSignalGen->getOutput("signal"));
 } 
 
@@ -409,7 +378,7 @@ int main()
 	cout << "model and controller created" << endl;
         
 	// Connect the controller to the testbed. 
-	connectControllerToModel(*controller, tugofwar);
+	tugofwar.addController(controller);
 
 	cout << "connected" << endl;
 	// Use a SignalGenerator to create a set point signal for testing the

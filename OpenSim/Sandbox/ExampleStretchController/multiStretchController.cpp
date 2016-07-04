@@ -30,7 +30,6 @@
 
 static const double SIGNAL_GEN_CONSTANT{ 0.0 };
 static const double REPORTING_INTERVAL{ 0.2 };
-static const double LENGTH_GAIN{ 1.0 };
 static const double DAMPING{ 10 };
 static const double STIFFNESS{ 1. };
 static const double SPHERE_RADIUS{ 0.1 };
@@ -48,9 +47,11 @@ Model buildTugofwarModel();   //defined in buildTugofwarModel.cpp
 // Build the StretchController.
 //------------------------------------------------------------------------------
 
-void addStretchController(MultiController* controller, PathActuator& pa) {
+StretchController* addStretchController(MultiController* controller, PathActuator& pa) {
 
 	try {
+	cout << "adding subcontroller for " << pa.getName() << endl;
+//	cout << "getOwner " << pa.getOwner() << endl;
 	const int repIdx = controller->append_controller_reps(
 		StretchController()); // creates copy
 	auto& subcon = controller->upd_controller_reps(repIdx);
@@ -58,18 +59,22 @@ void addStretchController(MultiController* controller, PathActuator& pa) {
 	subcon.set_length_gain(LENGTH_GAIN);
 	subcon.updConnector<PathActuator>("actuator").connect(pa);
 	subcon.dumpConnections();
-	cout << "got connectee" << subcon.getConnectee<PathActuator>
+	cout << "got connectee " << subcon.getConnectee<PathActuator>
 		("actuator").getName() << endl;
+	return &subcon;
 	}
 	catch (Exception e) {
 		cout << e.what() << endl;
+	}
+	catch (const std::exception& e) {
+		std::cout << e.what() << std::endl;
 	}
 }
 
 MultiController* buildMultiController() {
 	try {
 		cout << "building controller" << endl;
-		auto controller = new MultiController();
+		auto* controller = new MultiController();
 		controller->setName("multiCon");
 		//controller->set_length_gain(LENGTH_GAIN);
 		//controller->updInput("fiberLength").connect(pa.getOutput("geometrypath_/length"));
@@ -435,11 +440,37 @@ int main()
 		PathActuator& pa1 = tugofwar.updComponent<PathActuator>("muscle1");
 		PathActuator& pa2 = tugofwar.updComponent<PathActuator>("muscle2");
 
-		addStretchController(controller, pa1);
-		addStretchController(controller, pa2);
+		//auto* con1 = addStretchController(controller, pa1);
+		//auto* con2 = addStretchController(controller, pa2);
 
-		tugofwar.addController(controller);
-		cout << "controller added" << endl;
+
+		try {
+			// create subcomponent controller
+			cout << "adding subcontroller for " << pa1.getName() << endl;
+			//	cout << "getOwner " << pa.getOwner() << endl;
+			const int repIdx = controller->append_controller_reps(
+				StretchController()); // creates copy
+			auto& subcon = controller->upd_controller_reps(repIdx);
+			subcon.setName(pa1.getName() + "_stretch_controller");
+			subcon.set_length_gain(1.);
+
+			// Add main controller
+			tugofwar.addController(controller);
+			cout << "controller added" << endl;
+
+			// Set connections.
+			subcon.updConnector<PathActuator>("actuator").connect(pa1);
+			subcon.dumpConnections();
+			cout << "got connectee " << subcon.getConnectee<PathActuator>
+				("actuator").getName() << endl;
+		}
+		catch (Exception e) {
+			cout << e.what() << endl;
+		}
+		catch (const std::exception& e) {
+			std::cout << e.what() << std::endl;
+		}
+
 
 		// Use a SignalGenerator to create a set point signal for testing the
 		// controller. 
@@ -450,29 +481,28 @@ int main()
 		showSubcomponentInfo(tugofwar);
 		showSubcomponentInfo(*controller);
 
-
 		cout << "sub info are shown" << endl;
 
 		// List the device outputs we wish to display during the simulation.
-		std::vector<std::string> controllerOutputs{ "stretch_control" };
+		//std::vector<std::string> controllerOutputs{ "stretch_control" };
 
 		// Create a new ConsoleReporter. Set its name and reporting interval.
-		auto reporter = new ConsoleReporter();
-		reporter->setName(tugofwar.getName() + "_" + controller->getName() + "_results");
-		reporter->set_report_time_interval(REPORTING_INTERVAL);
-		//reporter->updInput("inputs").connect(controller->getOutput("stretch_control"));
-		reporter->updInput("inputs").connect(pa1.getOutput("geometrypath_/length"));
-		reporter->updInput("inputs").connect(pa2.getOutput("geometrypath_/length"));
+		//auto reporter = new ConsoleReporter();
+		//reporter->setName(tugofwar.getName() + "_" + controller->getName() + "_results");
+		//reporter->set_report_time_interval(REPORTING_INTERVAL);
+		////reporter->updInput("inputs").connect(controller->getOutput("stretch_control"));
+		//reporter->updInput("inputs").connect(pa1.getOutput("geometrypath_/length"));
+		//reporter->updInput("inputs").connect(pa2.getOutput("geometrypath_/length"));
 
-		//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_0/value"));
-		//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_1/value"));
-		//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_2/value"));
-		//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_3/value"));
-		//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_4/value"));
-		reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_5/value"));
+		////reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_0/value"));
+		////reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_1/value"));
+		////reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_2/value"));
+		////reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_3/value"));
+		////reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_4/value"));
+		//reporter->updInput("inputs").connect(tugofwar.getOutput("/tugOfWar/blockToGround/blockToGround_coord_5/value"));
 
-		// Add the reporter to the model.
-		tugofwar.addComponent(reporter);
+		//// Add the reporter to the model.
+		//tugofwar.addComponent(reporter);
 
 		// Add a table reporter 
 		//TableReporter* tblReporter = new TableReporter();
@@ -485,6 +515,8 @@ int main()
 		//Geometry* targetGeom = new Sphere(SPHERE_RADIUS);
 		//targetGeom->setOpacity(0.6);
 		//tugofwar.updGround().attachGeometry(targetGeom);
+
+		cout << "before initsystem()" << endl;
 
 		SimTK::State& sDev = tugofwar.initSystem();
 

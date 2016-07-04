@@ -8,8 +8,8 @@
  * through the Warrior Web program.                                           *
  *                                                                            *
  * Copyright (c) 2005-2016 Stanford University and the Authors                *
- * Author(s): Chris Dembia, Shrinidhi K. Lakshmikanth, Ajay Seth,             *
- *            Thomas Uchida                                                   *
+ * Author(s): Ian Stavness, Mohammad Shabani, Chris Dembia,                   *
+ *			  Shrinidhi K. Lakshmikanth, Ajay Seth, Thomas Uchida             *
  *                                                                            *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may    *
  * not use this file except in compliance with the License. You may obtain a  *
@@ -24,12 +24,10 @@
 
 
 #include <OpenSim/OpenSim.h>
-#include "helperMethods.h"
+#include "HelperMethods.h"
 #include "ModelBasedController.h"
 
-static const double SIGNAL_GEN_CONSTANT{ 0.0 };
 static const double REPORTING_INTERVAL{ 0.2 };
-static const double LENGTH_GAIN{ 1.0 };
 static const double DAMPING{ 10 };
 static const double STIFFNESS{ 1. };
 static const double SPHERE_RADIUS{ 0.1 };
@@ -40,35 +38,8 @@ using namespace std;
 
 namespace OpenSim {
 
-// Forward declarations for methods used below.
-Model buildTugofwarModel();   //defined in buildTugofwarModel.cpp
-
-//------------------------------------------------------------------------------
-// Build the StretchController.
-//------------------------------------------------------------------------------
-
-StretchController* buildStretchController(PathActuator& pa) {
-	try {
-		cout << "building controller" << endl;
-		auto controller = new StretchController();
-		controller->setName("stretchCon");
-		controller->set_length_gain(LENGTH_GAIN);
-		controller->updInput("fiberLength").connect(pa.getOutput("geometrypath_/length")); 
-		controller->updConnector("actuator").connect(pa);
-		return controller;
-	}
-	catch (Exception e) {
-		cout << e.what() << endl;
-	}
-}
-
-
-//------------------------------------------------------------------------------
-// Attach the stretch controller to a model
-//------------------------------------------------------------------------------
-void connectControllerToModel(Controller& controller, Model& model)
-{
-}
+// Forward declarations for methods defined in HelperMethods.h
+StretchController* buildStretchController(const PathActuator&);
 
 //------------------------------------------------------------------------------
 // Add a SignalGenerator to a StretchController.
@@ -86,7 +57,7 @@ void addSignalGeneratorToController(Controller& controller)
 	
 	// Connect the signal generator's output signal to the controller's
     // setpoint 
-	controller.updInput("fiberLength_setpoint")
+	controller.updInput("length_setpoint")
         .connect(lengthSignalGen->getOutput("signal"));
 } 
 
@@ -416,7 +387,7 @@ int main()
 
 		
 	auto& pathActuator = tugofwar.updComponent<PathActuator>("muscle1");
-	auto controller = buildStretchController(pathActuator);
+	auto controller = buildModelBasedController(pathActuator);
 	tugofwar.addController(controller);
 
 	// Use a SignalGenerator to create a set point signal for testing the

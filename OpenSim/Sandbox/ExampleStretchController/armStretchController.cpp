@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- *
- *                     OpenSim:  exampleHopperDevice.cpp                      *
+ *                    OpenSim:  armStretchController.cpp                      *
  * -------------------------------------------------------------------------- *
  * The OpenSim API is a toolkit for musculoskeletal modeling and simulation.  *
  * See http://opensim.stanford.edu and the NOTICE file for more information.  *
@@ -8,8 +8,8 @@
  * through the Warrior Web program.                                           *
  *                                                                            *
  * Copyright (c) 2005-2016 Stanford University and the Authors                *
- * Author(s): Chris Dembia, Shrinidhi K. Lakshmikanth, Ajay Seth,             *
- *            Thomas Uchida                                                   *
+ * Author(s): Ian Stavness, Mohammad Shabani, Chris Dembia,                   *
+ *			  Shrinidhi K. Lakshmikanth, Ajay Seth, Thomas Uchida             *
  *                                                                            *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may    *
  * not use this file except in compliance with the License. You may obtain a  *
