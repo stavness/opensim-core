@@ -491,6 +491,19 @@ public:
     double getDiscont(const SimTK::State& s) const
     { return s.getTime() < 0.5 ? s.getTime() : 1 + s.getTime(); }
 
+    MemberSubcomponentIndex getTimeDelaySubcomponentIndex() const 
+    { return _timeDelay; }
+
+    MemberSubcomponentIndex getStepDelaySubcomponentIndex() const
+    { return _stepDelay; }
+    
+    MemberSubcomponentIndex getDiscontDelaySubcomponentIndex() const
+    { return _discontDelay; }
+    
+    const Delay& getMemberSubcomponent(MemberSubcomponentIndex idx) const {
+        const Delay& subComponent = Super::getMemberSubcomponent<Delay>(idx);
+        return subComponent;
+    }
 private:
     void extendFinalizeFromProperties() override {
         Super::extendFinalizeFromProperties();
@@ -516,6 +529,7 @@ private:
             discontDelay.updInput("input").connect(getOutput("discont"));
     
     }
+
 
     MemberSubcomponentIndex _timeDelay
     { constructSubcomponent<Delay>("timeDelay") };
@@ -633,12 +647,12 @@ void testDiscontinuousInput() {
     // so the delay output should still be 1.5.
     //std::cout << comp->stepDelay.getValue(ts.getState()) << " " << std::endl;
 
-    const Delay& stepDelay = comp->getComponent<Delay>("/discontinuousInputTesting/stepDelay");
-    const Delay& discontDelay = comp->getComponent<Delay>("/discontinuousInputTesting/discontDelay");
-
+    const Delay& stepDelay = comp->getMemberSubcomponent(comp->getStepDelaySubcomponentIndex());
+    const Delay& discontDelay = comp->getMemberSubcomponent(comp->getDiscontDelaySubcomponentIndex());
+    
     SimTK_TEST_EQ(stepDelay.getValue(ts.getState()), 1.5);
     
-    //std::cout << comp->discontDelay.getValue(ts.getState()) << " " << std::endl;
+    //std::cout << discontDelay.getValue(ts.getState()) << " " << std::endl;
     SimTK_TEST_EQ(discontDelay.getValue(ts.getState()), 0.46);
     // At the discontinuity. :)
     ts.stepTo(0.70);
